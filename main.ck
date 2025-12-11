@@ -9,7 +9,7 @@
 // --- Audio Settings ---
 10 => int NUM_SLOTS;            // Total number of sample slots
 10::second => dur MAX_DUR;      // Max recording time per slot
-0.02 => float THRESHOLD;        // Audio threshold to trigger recording
+0.06 => float THRESHOLD;        // Audio threshold to trigger recording
 50::ms => dur RELEASE_TIME;     // Fade out time for effects
 global float BPM;
 100.0 => BPM;                   // Global Tempo
@@ -58,8 +58,10 @@ adc => adcGain;
 0.5 => adcGain.gain; // Initial Mic Boost
 
 // Metronome Click
-Impulse click => dyno; 
-0.1 => click.gain;
+Impulse clickBase => ResonZ clickFilter => dac;
+800.0 => clickFilter.freq;  // Frequency of the "Woodblock"
+20.0 => clickFilter.Q;      // Resonance (Length of the ping)
+0.8 => clickBase.gain;      // Master Volume for click
 
 // Initialize Slots
 for(0 => int i; i < NUM_SLOTS; i++) {
@@ -284,11 +286,12 @@ fun void handlePlayback(int index) {
             // [RETRIGGER MODE]
             playShreds[index].exit(); // Kill the previous waiting thread
             slotRates[index] => slots[index].rate;
-
-            // Reset position (Handle reverse playback logic)
-            if(slotRates[index] < 0) slots[index].loopEnd() => slots[index].playPos; 
-            else 0::ms => slots[index].playPos;
             
+            // Reset position based on direction (Forward vs Reverse)
+            slotRates[index] => slots[index].rate;
+            if(slotRates[index] < 0) slots[index].loopEnd() => slots[index].playPos;
+            else 0::ms => slots[index].playPos;
+
             1 => slots[index].play; 
             spork ~ waitAndStop(index) @=> playShreds[index]; // Start new watcher
             <<< "Slot", index+1, " -> RETRIGGER" >>>;
@@ -361,22 +364,25 @@ fun void waitAndStop(int index) {
 // -----------------------
 // Handles the "Arm -> Wait for Sound -> Record" workflow.
 fun void waitAndRecord(int index) {
+    
+    // 1. Tiny delay to filter out the mechanical click of the 'R' key
+    20::ms => now; 
+
     // Stage 1: Wait for Audio Threshold (Auto-Start)
     while(isPending[index] == 1) {
         if(Math.fabs(adc.last()) > THRESHOLD) {
             0 => isPending[index];
-            1 => isRecording[index]; 
+            1 => isRecording[index];
             
             // Initialize LiSa for recording
-            0::ms => slots[index].recPos; 
+            0::ms => slots[index].recPos;
             now => recStart[index]; 
             now => lastHeard[index]; 
             0::ms => slots[index].playPos; 
             1 => slots[index].record;
-            
             <<< "Ref [" + (index+1) + "] *** REC START ***", "" >>>;
         } 
-        1::samp => now;
+        1::ms => now; 
     }
     
     // Stage 2: Monitor input while recording (used for Silence Detection)
@@ -384,7 +390,7 @@ fun void waitAndRecord(int index) {
         if(Math.fabs(adc.last()) > THRESHOLD / 2) { 
             now => lastHeard[index];
         } 
-        1::ms => now; 
+        10::ms => now; 
     }
 }
 
@@ -394,24 +400,33 @@ fun void waitAndRecord(int index) {
 // CRITICAL: Calculates the "musical" length of the loop (Quantization).
 // If you recorded 3.9 beats, it snaps to 4.0 and waits for the gap to fill.
 fun void stopRecording(int index) {
-    adcGain =< slots[index]; // Unpatch mic immediately
-    0 => isRecording[index]; 
+    adcGain =< slots[index]; // 1. Unpatch mic immediately to stop input
+    0 => isRecording[index];
+
+    // 2. TRIM: Calculate length based on LAST HEARD audio, not 'now'
+    lastHeard[index] - recStart[index] => dur validAudio;
     
-    // Calculate raw duration
-    now - recStart[index] => dur validAudio;
-    
-    // Snap to nearest beat
+    // Safety: If validAudio is negative (glitch) or zero, treat as very short
+    if(validAudio < 0::ms) 0::ms => validAudio;
+
+    // 3. QUANTIZE: Snap the *trimmed* audio to the nearest beat
     (validAudio / 60::second) * BPM => float rawBeats; 
     Math.ceil(rawBeats) => float snappedBeats;
-    if(snappedBeats < 1) 1 => snappedBeats; // Min length: 1 beat
+    if(snappedBeats < 1) 1 => snappedBeats; // Minimum length: 1 beat
     
-    snappedBeats * 60::second / BPM => dur quantLength; 
-    quantLength - validAudio => dur gapToFill;
+    snappedBeats * 60::second / BPM => dur quantLength;
     
-    if(gapToFill > 0::ms) { 
-        // We stopped early. Record silence to fill the measure.
-        spork ~ finalizeLoop(index, gapToFill, quantLength); 
+    // 4. WAIT: Check if we need to fill the rest of the measure with silence
+    // We compare the Target Length vs. How much time has physically passed
+    quantLength - (now - recStart[index]) => dur remainingWait;
+    
+    if(remainingWait > 0::ms) { 
+        // Case A: You stopped BEFORE the beat finished.
+        // We wait for the remaining time to fill the loop perfectly.
+        spork ~ finalizeLoop(index, remainingWait, quantLength);
     } else { 
+        // Case B: You stopped AFTER the beat (late).
+        // We finalize immediately, effectively cutting off the extra silence/noise.
         finalizeLoop(index, 0::ms, quantLength);
     }
 }
@@ -672,8 +687,13 @@ fun void mixSamples(int target) {
 fun void runClock() { 
     while(true) { 
         beatTrigger.broadcast(); // Notify all listeners
-        if(metronomeOn == 1) { 1.0 => click.next; } 
-        60::second / BPM => now;
+        
+        if(metronomeOn == 1) { 
+            // Trigger the "Ping"
+            1.0 => clickBase.next;
+        } 
+        
+        60::second / BPM => now; 
     } 
 }
 
