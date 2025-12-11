@@ -401,7 +401,7 @@ fun void stopRecording(int index) {
     now - recStart[index] => dur validAudio;
     
     // Snap to nearest beat
-    validAudio / 60::second / BPM => float rawBeats; 
+    (validAudio / 60::second) * BPM => float rawBeats; 
     Math.ceil(rawBeats) => float snappedBeats;
     if(snappedBeats < 1) 1 => snappedBeats; // Min length: 1 beat
     
@@ -433,7 +433,7 @@ fun void finalizeLoop(int index, dur waitTime, dur finalLength) {
     1.0 => slots[index].gain;
     
     adcGain => slots[index]; // Repatch mic for next time
-    <<< "Recorded Slot", index+1, "(", finalLength/60::second / BPM, "beats )" >>>;
+    <<< "Recorded Slot", index+1, "(", (finalLength / 60::second) * BPM, "beats )" >>>;
 }
 
 
