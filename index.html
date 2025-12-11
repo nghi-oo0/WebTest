@@ -9,17 +9,21 @@
 <body>
 
     <div class="controls">
-        <h1>Live Sampler (Web Version)</h1>
-        <div>
+        <h1>Live Sampler</h1>
+        
+        <div class="mic-wrapper">
             <button id="startBtn">1. Start Mic & Engine</button>
-            <span style="margin-left: 15px;">Mic: <div id="micLed" class="mic-indicator"></div></span>
+            <span class="mic-label">Mic: <div id="micLed" class="mic-indicator"></div></span>
         </div>
-        <div style="margin-left: 20px; border-left: 1px solid #555; padding-left: 20px;">
-            <input type="file" id="fileInput" multiple accept="audio/*" style="display:none">
+
+        <div class="upload-section">
+            <input type="file" id="fileInput" class="hidden" multiple accept="audio/*">
             <button id="uploadBtn" disabled>2. Upload Samples</button>
             <div id="fileMapping">Upload files to map them to keys [Q, W, E, A, S, D]</div>
         </div>
-        <div id="status" style="width: 100%; margin-top: 10px;">Status: Waiting to start...</div>
+
+        <div id="status" class="status-bar">Status: Waiting to start...</div>
+
         <div class="bpm-control">
             <label for="bpmInput">BPM:</label>
             <input type="number" id="bpmInput" value="100" min="40" max="300">

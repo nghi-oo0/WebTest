@@ -64,7 +64,7 @@ startBtn.addEventListener('click', async () => {
         await theChuck.runCode(chuckCode);
         
         statusDiv.innerText = "Status: RUNNING";
-        statusDiv.style.color = "#0f0";
+        statusDiv.className = "status-bar status-success";
         startBtn.disabled = true;
         uploadBtn.disabled = false;
 
@@ -74,7 +74,7 @@ startBtn.addEventListener('click', async () => {
     } catch (e) {
         console.error(e);
         statusDiv.innerText = "Error: " + e.message;
-        statusDiv.style.color = "#f00";
+        statusDiv.className = "status-bar status-error";
     }
 });
 
