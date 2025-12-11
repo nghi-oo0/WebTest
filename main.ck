@@ -220,7 +220,14 @@
         }
         fun void runClock() { while(true) { beatTrigger.broadcast(); if(metronomeOn == 1) { 1.0 => click.next; } quarter => now; } }
         fun void monitorMic() { while(true) { Math.fabs(adc.last()) => micLevel; 100::ms => now; } }
-        fun void syncPlay(int index) { beatTrigger => now; slotRates[index] => slots[index].rate; if(slotRates[index] < 0) slots[index].loopEnd() => slots[index].playPos; else 0::ms => slots[index].playPos; 1 => slots[index].play; waitAndStop(index); }
+        fun void syncPlay(int index) { 
+            // beatTrigger => now; // Commented out for instant playback
+            slotRates[index] => slots[index].rate; 
+            if(slotRates[index] < 0) slots[index].loopEnd() => slots[index].playPos; 
+            else 0::ms => slots[index].playPos; 
+            1 => slots[index].play; 
+            waitAndStop(index);
+        }
         fun void waitAndStop(int index) {
             slotRates[index] => float currentRate; Math.fabs(currentRate) => float absRate; if(absRate < 0.01) 1.0 => absRate;
             slots[index].loopEnd() / absRate => dur playTime;
