@@ -1,11 +1,12 @@
 body { 
-    font-family: monospace; 
+    font-family: font; 
     background: #222; 
     color: #eee; 
     padding: 20px; 
 }
 
 #console { 
+    font-family: monospace;
     background: #000; 
     border: 1px solid #444; 
     height: 300px; 
@@ -19,6 +20,7 @@ body {
 
 button { 
     padding: 10px 20px; 
+    font-family: monospace;
     font-size: 16px; 
     cursor: pointer; 
     background: #444; 
@@ -129,3 +131,8 @@ h1 { margin-top: 0; width: 100%; }
 
 .status-success { color: #0f0 !important; }
 .status-error { color: #f00 !important; }
+
+@font-face {
+  font-family: font;
+  src: url(maryson-print.otf);
+}

@@ -75,7 +75,7 @@ for(0 => int i; i < NUM_SLOTS; i++) {
     slots[i].bi(0);                 // Unidirectional playback
     0::ms => slots[i].rampUp;       // Instant attack
     10::ms => slots[i].rampDown;    // Short release to prevent clicks
-    0 => slots[i].feedback;         // No feedback (delay line behavior)
+    0 => slots[i].feedback;         // No feedback (erases old audio)
     
     // Default Values
     1.0 => slotRates[i];
@@ -92,7 +92,7 @@ Event beatTrigger;
 
 // Start background processes
 spork ~ runClock();         // Metronome timing
-spork ~ monitorMic();       // VU Meter logic
+spork ~ monitorMic();       // Mic LED logic
 spork ~ bufferLoaderLoop(); // File loading system
 
 <<< "--- LIVE SAMPLER READY ---", "" >>>;
@@ -163,7 +163,7 @@ while(true) {
     }
 
     // -------------------------------------
-    // [[ / ]] VOLUME CONTROL
+    // [ [ / ] ] VOLUME CONTROL
     // -------------------------------------
     if(c == 91 || c == 219) { // '[' key
         slotGains[targetSlot] - 0.1 => slotGains[targetSlot];
@@ -189,7 +189,7 @@ while(true) {
                 0 => slots[targetSlot].play; 
                 0 => isPlaying[targetSlot];
                 spork ~ waitAndRecord(targetSlot);
-                <<< "Slot [" + (targetSlot+1) + "] ARMED... (Speak to trigger)", "" >>>;
+                <<< "Slot [" + (targetSlot+1) + "] ARMED... (Make sound to trigger)", "" >>>;
             } else if(isRecording[targetSlot] == 1) { 
                 // STOP RECORDING
                 stopRecording(targetSlot);
@@ -307,10 +307,9 @@ fun void handlePlayback(int index) {
 
 // Function: syncPlay
 // ------------------
-// Starts playback. Originally designed to wait for the beat (Quantized Start),
-// but modified here for Instant Start.
+// Starts playback.
 fun void syncPlay(int index) { 
-    // beatTrigger => now; // <--- REMOVED: Instant Playback (No wait)
+    // beatTrigger => now; // Uncomment to make playback snaps to bpm
     
     slotRates[index] => slots[index].rate;
     
@@ -465,6 +464,10 @@ fun void renderEffect(int srcIndex, int destIndex, int type) {
         <<< "Error: Source Empty!", "" >>>;
         return; 
     } 
+    if(srcIndex == destIndex) {
+        << "Please render in a different slot than the original audio!", "" >>>;
+        return;
+    }
     
     // Setup Destination (Clean slate)
     0.0 => adcGain.gain; // Mute mic
