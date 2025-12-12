@@ -1,5 +1,5 @@
 body { 
-    font-family: font; 
+    font-family: monospace; 
     background: #222; 
     color: #eee; 
     padding: 20px; 
@@ -134,5 +134,5 @@ h1 { margin-top: 0; width: 100%; }
 
 @font-face {
   font-family: font;
-  src: url(maryson-print.otf);
+  src: url();
 }

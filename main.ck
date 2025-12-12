@@ -271,8 +271,6 @@ while(true) {
 // PLAYBACK ENGINE
 // =========================================================
 
-// Function: handlePlayback
-// ------------------------
 // The main entry point when a slot key (1-0) is pressed.
 // Logic:
 // 1. If recording, do nothing (safety).
@@ -305,8 +303,6 @@ fun void handlePlayback(int index) {
     }
 }
 
-// Function: syncPlay
-// ------------------
 // Starts playback.
 fun void syncPlay(int index) { 
     // beatTrigger => now; // Uncomment to make playback snaps to bpm
@@ -321,8 +317,6 @@ fun void syncPlay(int index) {
     waitAndStop(index); // Enter the "Watcher" loop
 }
 
-// Function: waitAndStop
-// ---------------------
 // "The Watcher". This function keeps the 'isPlaying' flag TRUE while the sample plays.
 // It calculates exactly how long the sample will take (accounting for pitch speed)
 // and waits for that duration.
@@ -359,8 +353,6 @@ fun void waitAndStop(int index) {
 // RECORDING & QUANTIZATION
 // =========================================================
 
-// Function: waitAndRecord
-// -----------------------
 // Handles the "Arm -> Wait for Sound -> Record" workflow.
 fun void waitAndRecord(int index) {
     
@@ -393,8 +385,6 @@ fun void waitAndRecord(int index) {
     }
 }
 
-// Function: stopRecording
-// -----------------------
 // Triggered when user presses 'R' to stop.
 // CRITICAL: Calculates the "musical" length of the loop (Quantization).
 // If you recorded 3.9 beats, it snaps to 4.0 and waits for the gap to fill.
@@ -430,8 +420,6 @@ fun void stopRecording(int index) {
     }
 }
 
-// Function: finalizeLoop
-// ----------------------
 // Commits the recording to memory and resets playback defaults.
 fun void finalizeLoop(int index, dur waitTime, dur finalLength) {
     waitTime => now; // Wait for gap (silence)
@@ -455,8 +443,6 @@ fun void finalizeLoop(int index, dur waitTime, dur finalLength) {
 // EFFECTS RENDERER
 // =========================================================
 
-// Function: renderEffect
-// ----------------------
 // Renders offline effects (Reverb, Reverse, Pitch) from one slot to another.
 fun void renderEffect(int srcIndex, int destIndex, int type) {
     // Safety Check
@@ -554,8 +540,6 @@ fun void renderEffect(int srcIndex, int destIndex, int type) {
 // MACRO MANAGERS (Concatenate & Mix)
 // =========================================================
 
-// Function: concatManager / concatenateSamples
-// --------------------------------------------
 // Records a sequence of slots end-to-end into a target slot.
 fun void concatManager() { 
     while(concatRunning == 1) { 100::ms => now; } 
@@ -612,8 +596,6 @@ fun void concatenateSamples(int target) {
     <<< "Concatenation complete to Slot", target+1 >>>;
 }
 
-// Function: mixManager / mixSamples
-// ---------------------------------
 // Records multiple slots simultaneously (layered) into a target slot.
 fun void mixManager() { 
     while(concatRunning == 1) { 100::ms => now; } 
@@ -684,8 +666,6 @@ fun void mixSamples(int target) {
 // SYSTEM UTILITIES
 // =========================================================
 
-// Function: runClock
-// ------------------
 // Background thread for Metronome and Timing Events.
 fun void runClock() { 
     while(true) { 
@@ -700,8 +680,6 @@ fun void runClock() {
     } 
 }
 
-// Function: monitorMic
-// --------------------
 // Background thread to read mic level for the UI Visualizer.
 fun void monitorMic() { 
     while(true) { 
@@ -710,8 +688,6 @@ fun void monitorMic() {
     } 
 }
 
-// Function: bufferLoaderLoop
-// --------------------------
 // Background thread waiting for file uploads from the Web Interface.
 fun void bufferLoaderLoop() {
     while(true) {
@@ -720,8 +696,6 @@ fun void bufferLoaderLoop() {
     }
 }
 
-// Function: loadFromBuffer
-// ------------------------
 // Transfers raw data from JS Array -> LiSa Memory
 fun void loadFromBuffer(int index) {
     // Reset Slot
